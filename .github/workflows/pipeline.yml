@@ -48,8 +48,8 @@ jobs:
             lucastrindadedev/trader-web:${{ github.run_number }}
             lucastrindadedev/trader-web:latest
           build-args: |
-            NEXT_PUBLIC_NEST_URL=a7d91deb373e34b66b7ddbcce4861d65-1276077066.us-east-1.elb.amazonaws.com
-            NEXT_PUBLIC_NEST_URL_API=af9555fa0e41d4d5caa0032d7e4e855a-2027418273.us-east-1.elb.amazonaws.com
+            next_url=a7d91deb373e34b66b7ddbcce4861d65-1276077066.us-east-1.elb.amazonaws.com
+            next_url_api=af9555fa0e41d4d5caa0032d7e4e855a-2027418273.us-east-1.elb.amazonaws.com
             
   CD:
     runs-on: ubuntu-latest
