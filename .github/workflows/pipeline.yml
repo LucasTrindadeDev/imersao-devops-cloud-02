@@ -18,8 +18,39 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_PASS }}
         
-      - name: Passo 03
-        run: echo "Subir as imagens para o repositório de imagens docker (DockerHub)"
+      - name: Construção da imagem do worker
+        uses: docker/build-push-action@v4.1.1
+        with:
+          context: ./home-broker/01-worker
+          file: ./home-broker/01-worker/Dockerfile
+          push: true
+          tags: |
+            lucastrindadedev/trader-worker:${{ github.run_number }}
+            lucastrindadedev/trader-worker:latest
+
+      - name: Construção da imagem da api
+        uses: docker/build-push-action@v4.1.1
+        with:
+          context: ./home-broker/02-api
+          file: ./home-broker/02-api/Dockerfile
+          push: true
+          tags: |
+            lucastrindadedev/trader-api:${{ github.run_number }}
+            lucastrindadedev/trader-api:latest
+
+      - name: Construção da imagem do frontend
+        uses: docker/build-push-action@v4.1.1
+        with:
+          context: ./home-broker/03-frontend
+          file: ./home-broker/03-frontend/Dockerfile
+          push: true
+          tags: |
+            lucastrindadedev/trader-web:${{ github.run_number }}
+            lucastrindadedev/trader-web:latest
+          build-args: |
+            NEXT_PUBLIC_NEST_URL=a7d91deb373e34b66b7ddbcce4861d65-1276077066.us-east-1.elb.amazonaws.com
+            NEXT_PUBLIC_NEST_URL_API=af9555fa0e41d4d5caa0032d7e4e855a-2027418273.us-east-1.elb.amazonaws.com
+            
   CD:
     runs-on: ubuntu-latest
     needs: [CI]
