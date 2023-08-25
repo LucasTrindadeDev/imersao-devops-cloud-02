@@ -1,0 +1,95 @@
+name: CI-CD
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout da base de código
+        uses: actions/checkout@v3.5.3
+        
+      - name: Autenticação no Docker Hub
+        uses: docker/login-action@v2.2.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PASS }}
+        
+      - name: Construção da imagem do worker
+        uses: docker/build-push-action@v4.1.1
+        with:
+          context: ./home-broker/01-worker
+          file: ./home-broker/01-worker/Dockerfile
+          push: true
+          tags: |
+            lucastrindadedev/trader-worker:${{ github.run_number }}
+            lucastrindadedev/trader-worker:latest
+
+      - name: Construção da imagem da api
+        uses: docker/build-push-action@v4.1.1
+        with:
+          context: ./home-broker/02-api
+          file: ./home-broker/02-api/Dockerfile
+          push: true
+          tags: |
+            lucastrindadedev/trader-api:${{ github.run_number }}
+            lucastrindadedev/trader-api:latest
+
+      - name: Construção da imagem do frontend
+        uses: docker/build-push-action@v4.1.1
+        with:
+          context: ./home-broker/03-frontend
+          file: ./home-broker/03-frontend/Dockerfile
+          push: true
+          tags: |
+            lucastrindadedev/trader-web:${{ github.run_number }}
+            lucastrindadedev/trader-web:latest
+          build-args: |
+            next_url=${{ vars.NEXT_URL }}
+            next_url_api=${{ vars.NEXT_URL_API }}
+            
+  CD:
+    runs-on: ubuntu-latest
+    needs: [CI]
+    steps:
+      - name: Checkout da base de código
+        uses: actions/checkout@v3.5.3
+        
+      - name: Configurar as credenciais de acesso da AWS
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Configuração do Kubeconfig
+        shell: bash
+        run: |
+          aws eks update-kubeconfig --name my-eks-cluster --region us-east-1
+      
+      - name: Deploy do worker no cluster Kubernetes
+        uses: Azure/k8s-deploy@v4.9
+        with:
+          manifests: |
+            ./home-broker/04-k8s-deploy/02-worker/deployment.yaml
+          images: |
+            lucastrindadedev/trader-worker:${{ github.run_number }}
+
+      - name: Deploy da api no cluster Kubernetes
+        uses: Azure/k8s-deploy@v4.9
+        with:
+          manifests: |
+            ./home-broker/04-k8s-deploy/03-api/deployment.yaml
+          images: |
+            lucastrindadedev/trader-api:${{ github.run_number }}
+
+      - name: Deploy do frontend no cluster Kubernetes
+        uses: Azure/k8s-deploy@v4.9
+        with:
+          manifests: |
+            ./home-broker/04-k8s-deploy/04-frontend/deployment.yaml
+          images: |
+            lucastrindadedev/trader-web:${{ github.run_number }}
