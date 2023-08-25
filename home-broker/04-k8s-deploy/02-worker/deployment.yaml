@@ -12,12 +12,12 @@ spec:
         app: trader
     spec:
       containers:
-      - name: trader
-        image: fabricioveronez/trader-worker:v1
-        env:
-          - name: KAFKA_BOOTSTRAP_SERVERS
-            value: "kafka-service:9092"
-          - name: KAFKA_GROUP_ID
-            value: "myGroup"
-          - name: KAFKA_AUTO_OFFSET_RESET
-            value: "earliest"
+        - name: trader
+          image: lucastrindadedev/trader-worker:v1
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka-service:9092"
+            - name: KAFKA_GROUP_ID
+              value: "myGroup"
+            - name: KAFKA_AUTO_OFFSET_RESET
+              value: "earliest"
